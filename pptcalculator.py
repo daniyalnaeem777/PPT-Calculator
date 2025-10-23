@@ -1,4 +1,4 @@
-# pptcalculator.py — TP/SL Calculator (simple, highlighted ATR selector, no copy inputs)
+# pptcalculator.py — TP/SL Calculator (clean, no form, no overlays)
 # Long:  SL = Entry − (SL_mult × ATR)   |   TP = Entry + (2.0 × ATR)
 # Short: SL = Entry + (SL_mult × ATR)   |   TP = Entry − (2.0 × ATR)
 
@@ -7,34 +7,29 @@ import streamlit as st
 # ---------- Page setup ----------
 st.set_page_config(page_title="TP/SL Calculator", page_icon="📈", layout="centered")
 
-# ---------- Global Helvetica + button-like radio styling ----------
-st.markdown(
-    """
-    <style>
-      * { font-family: 'Helvetica', sans-serif !important; }
-      .stMetric, .stAlert { font-weight: 600 !important; }
+# ---------- Global Helvetica + button-like styling ----------
+st.markdown("""
+<style>
+* { font-family: 'Helvetica', sans-serif !important; }
+.stMetric, .stAlert { font-weight: 600 !important; }
 
-      /* make the SL radio look like two buttons with highlighted selection */
-      .sl-group [role="radiogroup"] label {
-        border: 1px solid rgba(255,255,255,0.18);
-        border-radius: 999px;
-        padding: 6px 12px;
-        margin-right: 10px;
-        cursor: pointer;
-      }
-      .sl-group [role="radiogroup"] label:hover {
-        background: rgba(255,255,255,0.06);
-      }
-      /* highlight selected */
-      .sl-group [role="radiogroup"] input:checked ~ div {
-        background: rgba(130,180,255,0.25);
-        border-radius: 999px;
-        padding: 6px 12px;
-      }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+.sl-group [role="radiogroup"] label {
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 999px;
+  padding: 6px 12px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+.sl-group [role="radiogroup"] label:hover {
+  background: rgba(255,255,255,0.06);
+}
+.sl-group [role="radiogroup"] input:checked ~ div {
+  background: rgba(130,180,255,0.25);
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+</style>
+""", unsafe_allow_html=True)
 
 TP_MULT = 2.0
 DECIMALS = 4
@@ -43,7 +38,7 @@ DECIMALS = 4
 st.title("📈 TP/SL Calculator")
 st.caption("Fast risk targets based on ATR")
 
-# ---------- SL multiple selector (1.0 or 1.5), styled as buttons ----------
+# ---------- SL multiple selector ----------
 st.write("**Stop-Loss multiple**")
 st.markdown('<div class="sl-group">', unsafe_allow_html=True)
 sl_choice = st.radio(
@@ -67,39 +62,34 @@ st.markdown(
 
 st.divider()
 
-# ---------- Input card (form + Calculate button) ----------
-with st.form("calc_form", clear_on_submit=False):
-    st.markdown("**Direction**")
-    side = st.radio("Direction", ["Long", "Short"], horizontal=True, label_visibility="collapsed")
-    c1, c2 = st.columns(2)
-    with c1:
-        entry = st.number_input("Entry price", min_value=0.0, format="%.10f")
-    with c2:
-        atr = st.number_input("ATR (14)", min_value=0.0, format="%.10f")
-    submitted = st.form_submit_button("Calculate")
+# ---------- Inputs (no form) ----------
+st.markdown("**Direction**")
+side = st.radio("Direction", ["Long", "Short"], horizontal=True, label_visibility="collapsed")
+c1, c2 = st.columns(2)
+with c1:
+    entry = st.number_input("Entry price", min_value=0.0, format="%.4f", key="entry")
+with c2:
+    atr = st.number_input("ATR (14)", min_value=0.0, format="%.4f", key="atr")
 
-# ---------- Core computation ----------
-def compute(side: str, entry: float, atr: float, sl_m: float, tp_m: float):
-    if side == "Long":
-        sl = entry - sl_m * atr
-        tp = entry + tp_m * atr
-        rr = (tp - entry) / max(entry - sl, 1e-12)
-        dsl = entry - sl
-        dtp = tp - entry
-    else:
-        sl = entry + sl_m * atr
-        tp = entry - tp_m * atr
-        rr = (entry - tp) / max(sl - entry, 1e-12)
-        dsl = sl - entry
-        dtp = entry - tp
-    return sl, tp, rr, dsl, dtp
-
-# ---------- Output ----------
-if submitted:
+# ---------- Compute when Calculate pressed ----------
+if st.button("Calculate"):
     if entry <= 0 or atr <= 0:
         st.error("Please enter positive numbers for **Entry** and **ATR**.")
     else:
-        sl, tp, rr, dsl, dtp = compute(side, entry, atr, sl_mult, TP_MULT)
+        # core logic
+        if side == "Long":
+            sl = entry - sl_mult * atr
+            tp = entry + TP_MULT * atr
+            rr = (tp - entry) / max(entry - sl, 1e-12)
+            dsl = entry - sl
+            dtp = tp - entry
+        else:
+            sl = entry + sl_mult * atr
+            tp = entry - TP_MULT * atr
+            rr = (entry - tp) / max(sl - entry, 1e-12)
+            dsl = sl - entry
+            dtp = entry - tp
+
         fmt = f"{{:.{DECIMALS}f}}"
         sl_pct = (dsl / entry) * 100 if entry > 0 else 0.0
         tp_pct = (dtp / entry) * 100 if entry > 0 else 0.0
@@ -129,5 +119,3 @@ if submitted:
             f"TP = Entry {sign_tp} {TP_MULT} × ATR",
             language="text"
         )
-
-# Note: No text_input “copy” fields → prevents any ghost key overlays on mobile/desktop.
