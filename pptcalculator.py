@@ -1,4 +1,4 @@
-# pptcalculator.py — Streamlit TP/SL Calculator with % Δ
+# pptcalculator.py — Streamlit TP/SL Calculator (bold metrics + Helvetica)
 # Long:  SL = Entry − (SL_mult × ATR)   |   TP = Entry + (TP_mult × ATR)
 # Short: SL = Entry + (SL_mult × ATR)   |   TP = Entry − (TP_mult × ATR)
 
@@ -7,6 +7,24 @@ from io import StringIO
 
 # ---------- Page setup ----------
 st.set_page_config(page_title="TP/SL Calculator", page_icon="📈", layout="centered")
+
+# ---------- Apply Helvetica font globally ----------
+st.markdown(
+    """
+    <style>
+    * {
+        font-family: 'Helvetica', sans-serif !important;
+    }
+    h1, h2, h3, h4, h5, h6, label, p, div {
+        font-family: 'Helvetica', sans-serif !important;
+    }
+    .stMetric {
+        font-weight: 600 !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # ---------- Sidebar ----------
 st.sidebar.header("⚙️ Settings")
@@ -30,7 +48,6 @@ with st.form("calc_form", clear_on_submit=False):
 
     submitted = st.form_submit_button("Calculate")
 
-
 # ---------- Core logic ----------
 def compute_tp_sl(side: str, entry: float, atr: float, sl_m: float, tp_m: float):
     if side == "Long":
@@ -46,7 +63,6 @@ def compute_tp_sl(side: str, entry: float, atr: float, sl_m: float, tp_m: float)
         dsl = sl - entry
         dtp = entry - tp
     return sl, tp, rr, dsl, dtp
-
 
 # ---------- Output ----------
 if submitted:
@@ -65,15 +81,15 @@ if submitted:
         a, b, c = st.columns(3)
         with a:
             st.markdown("**Stop Loss**")
-            st.error(fmt.format(sl))
+            st.error(f"**{fmt.format(sl)}**")
             st.caption(f"Δ {fmt.format(dsl)} ({sl_pct:.2f}%)")
         with b:
             st.markdown("**Take Profit**")
-            st.success(fmt.format(tp))
+            st.success(f"**{fmt.format(tp)}**")
             st.caption(f"Δ {fmt.format(dtp)} ({tp_pct:.2f}%)")
         with c:
             st.markdown("**Reward : Risk**")
-            st.info(f"{rr:.2f} : 1")
+            st.info(f"**{rr:.2f} : 1**")
 
         st.divider()
         st.caption("Formulae")
