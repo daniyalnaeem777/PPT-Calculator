@@ -1,4 +1,4 @@
-# pptcalculator.py — TP/SL Calculator (simple UI, highlighted ATR selector)
+# pptcalculator.py — TP/SL Calculator (simple, highlighted ATR selector, no copy inputs)
 # Long:  SL = Entry − (SL_mult × ATR)   |   TP = Entry + (2.0 × ATR)
 # Short: SL = Entry + (SL_mult × ATR)   |   TP = Entry − (2.0 × ATR)
 
@@ -7,13 +7,14 @@ import streamlit as st
 # ---------- Page setup ----------
 st.set_page_config(page_title="TP/SL Calculator", page_icon="📈", layout="centered")
 
-# ---------- Global Helvetica + “button-like” radio styling ----------
+# ---------- Global Helvetica + button-like radio styling ----------
 st.markdown(
     """
     <style>
       * { font-family: 'Helvetica', sans-serif !important; }
       .stMetric, .stAlert { font-weight: 600 !important; }
-      /* make the radio look like two buttons with a highlighted selection */
+
+      /* make the SL radio look like two buttons with highlighted selection */
       .sl-group [role="radiogroup"] label {
         border: 1px solid rgba(255,255,255,0.18);
         border-radius: 999px;
@@ -24,9 +25,9 @@ st.markdown(
       .sl-group [role="radiogroup"] label:hover {
         background: rgba(255,255,255,0.06);
       }
-      /* highlight the selected option */
+      /* highlight selected */
       .sl-group [role="radiogroup"] input:checked ~ div {
-        background: rgba(130,180,255,0.25);   /* subtle filled background for dark mode */
+        background: rgba(130,180,255,0.25);
         border-radius: 999px;
         padding: 6px 12px;
       }
@@ -35,7 +36,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ---------- Constants ----------
 TP_MULT = 2.0
 DECIMALS = 4
 
@@ -43,22 +43,20 @@ DECIMALS = 4
 st.title("📈 TP/SL Calculator")
 st.caption("Fast risk targets based on ATR")
 
-# ---------- SL multiple (1.0 or 1.5) — styled radio as buttons ----------
+# ---------- SL multiple selector (1.0 or 1.5), styled as buttons ----------
 st.write("**Stop-Loss multiple**")
-with st.container():
-    st.markdown('<div class="sl-group">', unsafe_allow_html=True)
-    sl_choice = st.radio(
-        "Choose SL × ATR",
-        ["SL = 1.0 × ATR", "SL = 1.5 × ATR"],
-        horizontal=True,
-        label_visibility="collapsed",
-        index=0
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
-
+st.markdown('<div class="sl-group">', unsafe_allow_html=True)
+sl_choice = st.radio(
+    "Choose SL × ATR",
+    ["SL = 1.0 × ATR", "SL = 1.5 × ATR"],
+    horizontal=True,
+    label_visibility="collapsed",
+    index=0
+)
+st.markdown("</div>", unsafe_allow_html=True)
 sl_mult = 1.0 if "1.0" in sl_choice else 1.5
 
-# Small “current” chips
+# Chips
 st.markdown(
     f"<span style='display:inline-block;padding:6px 10px;border-radius:999px;"
     f"border:1px solid rgba(255,255,255,0.14);margin-right:8px;'>Current SL = {sl_mult} × ATR</span>"
@@ -69,7 +67,7 @@ st.markdown(
 
 st.divider()
 
-# ---------- Input card ----------
+# ---------- Input card (form + Calculate button) ----------
 with st.form("calc_form", clear_on_submit=False):
     st.markdown("**Direction**")
     side = st.radio("Direction", ["Long", "Short"], horizontal=True, label_visibility="collapsed")
@@ -122,7 +120,7 @@ if submitted:
             st.info(f"**{rr:.2f} : 1**")
 
         st.divider()
-        st.caption("Formulae")
+        st.markdown("**Formulae**")
         sign_sl = "-" if side == "Long" else "+"
         sign_tp = "+" if side == "Long" else "-"
         st.code(
@@ -132,7 +130,4 @@ if submitted:
             language="text"
         )
 
-        # copy helpers (kept minimal)
-        with st.expander("Copy values"):
-            st.text_input("Stop Loss", value=fmt.format(sl), key="copy_sl")
-            st.text_input("Take Profit", value=fmt.format(tp), key="copy_tp")
+# Note: No text_input “copy” fields → prevents any ghost key overlays on mobile/desktop.
